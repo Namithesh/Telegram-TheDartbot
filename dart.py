@@ -1,4 +1,4 @@
-import sqlite3, random, asyncio, random
+import sqlite3, random
 from os import environ
 from dotenv import load_dotenv
 from telegram.ext import Updater, CommandHandler, MessageHandler, filters
