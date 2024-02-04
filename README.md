@@ -29,7 +29,7 @@ docker volume create data
 
 - Build and run docker image
 ```
-docker build ./Telegram-TheDartbot -t dart && docker run -v data:/dart dart 
+docker build ./Telegram-TheDartbot -t dart && docker run -v data:/dart --restart unless-stopped dart
 ```
 
 ### Running Locally
