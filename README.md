@@ -69,4 +69,4 @@ First of all, thank you for considering contributing! 🎉
 
 ## License
 
-See the [LICENSE.md](LICENSE.md) file for details.
+See the [LICENSE.md](LICENSE) file for details.
