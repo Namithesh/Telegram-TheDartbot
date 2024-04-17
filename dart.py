@@ -95,12 +95,29 @@ def leaderboard(update, context):
 def unknown(update, context):
      update.message.send_message(update.effective_chat.id, "Sorry, I didn't understand that command.")
 
+def stats(update, context):
+    if update.message.from_user.id == 458802161:
+       conn = sqlite3.connect('dice_scores.db')
+       c = conn.cursor()
+       c.execute("SELECT COUNT(DISTINCT user_id) FROM scores")
+       total_user = c.fetchall()
+       c.execute("SELECT COUNT(DISTINCT chat_id) FROM scores")
+       total_chat = c.fetchall()
+       c.execute("SELECT COUNT(score) FROM scores")
+       total_score = c.fetchall()
+       update.message.reply_text(f"total_user is {total_user} \n total chat is {total_chat} \n total score is {total_score}")
+       conn.close()
+    else:
+        return None
+       
+
 updater = Updater(TOKEN)
 dispatcher = updater.dispatcher
 
 dispatcher.add_handler(CommandHandler('start', start, run_async=True))
 dispatcher.add_handler(CommandHandler('top', leaderboard,  run_async=True))
 dispatcher.add_handler(MessageHandler(filters.Filters.dice, roll,  run_async=True))
+dispatcher.add_handler(CommandHandler('stats', stats, run_async=True))
 #dispatcher.add_handler(MessageHandler(filters.command, unknown))
 
 
