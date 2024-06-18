@@ -1,12 +1,14 @@
 import sqlite3, random
 from os import environ
 from dotenv import load_dotenv
-from telegram.ext import Updater, CommandHandler, MessageHandler, filters
+from telegram.ext import Updater, CommandHandler, MessageHandler, filters, CallbackContext
 from telegram import ParseMode, Dice
 
 load_dotenv()
 
 TOKEN = str(environ.get("BOT_TOKEN"))
+OWNER = int(environ.get("OWNER"))
+
 conn = sqlite3.connect('dice_scores.db')
 c = conn.cursor()
 c.execute("CREATE TABLE IF NOT EXISTS scores (chat_id BIGINT,user_id BIGINT, score INT)")
@@ -96,23 +98,35 @@ def unknown(update, context):
      update.message.send_message(update.effective_chat.id, "Sorry, I didn't understand that command.")
 
 def stats(update, context):
-    if update.message.from_user.id == 458802161:
+    if update.message.from_user.id == OWNER:
        conn = sqlite3.connect('dice_scores.db')
        c = conn.cursor()
        c.execute("SELECT COUNT(DISTINCT user_id) FROM scores")
-       total_user = c.fetchall()
+       total_user = c.fetchone()
        c.execute("SELECT COUNT(DISTINCT chat_id) FROM scores")
-       total_chat = c.fetchall()
+       total_chat = c.fetchone()
        c.execute("SELECT COUNT(score) FROM scores")
-       total_score = c.fetchall()
-       update.message.reply_text(f"total_user is {total_user} \n total chat is {total_chat} \n total score is {total_score}")
+       total_score = c.fetchone()
+       update.message.reply_text(f"total_user is {total_user[0]} \ntotal chat is {total_chat[0]} \ntotal score is {total_score[0]}")
        conn.close()
     else:
-        return None
+       return None
        
+
+def backup_sqlite_db(context: CallbackContext) -> None:
+    try:
+        document_path = 'dice_scores.db'
+        context.bot.send_document(chat_id=OWNER, document=open(document_path, 'rb'))
+        return True, None
+    except Exception as e:
+        context.bot.send_message(chat_id=OWNER, text=str(e))
+        return False, str(e)
+
 
 updater = Updater(TOKEN)
 dispatcher = updater.dispatcher
+job_queue = updater.job_queue
+job_queue.run_repeating(backup_sqlite_db, interval=43200, first=0) #12h
 
 dispatcher.add_handler(CommandHandler('start', start, run_async=True))
 dispatcher.add_handler(CommandHandler('top', leaderboard,  run_async=True))
@@ -123,3 +137,4 @@ dispatcher.add_handler(CommandHandler('stats', stats, run_async=True))
 
 updater.start_polling()
 updater.idle()
+
