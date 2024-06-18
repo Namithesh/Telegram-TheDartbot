@@ -50,9 +50,10 @@ python3 dart.py
 ```
 
 ## Configuration
-create .env file in root path and inside .env add bot token
+create .env file in root path and inside .env add bot token and your id
 ```
 BOT_TOKEN="12345567890"
+OWNER="YOUR ID HERE"
 ```
 
 # Contributing
