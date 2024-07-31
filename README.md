@@ -22,14 +22,9 @@ This codebase is of [Dartbot](https://t.me/TheDartBot) running on python3 with a
 git clone https://github.com/HyperNB/Telegram-TheDartbot.git
 ```
 
-- Create docker volume
-```
-docker volume create data
-```
-
 - Build and run docker image
 ```
-docker build ./Telegram-TheDartbot -t dart && docker run -v data:/dart -d --name=dart --restart unless-stopped dart
+docker build ./Telegram-TheDartbot -t dart && docker run -v ./Telegram-TheDartbot:/dart -d --name=dart --restart unless-stopped dart
 ```
 
 ### Running Locally
