@@ -1,4 +1,4 @@
-FROM amd64/pypy:latest
+FROM python:3.12.4-slim-bullseye
 WORKDIR /dart
 COPY . ./
 RUN pip install --no-cache-dir -r requirements.txt

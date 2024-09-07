@@ -1,8 +1,14 @@
 import sqlite3, random
-from os import environ
+from os import environ, path
 from dotenv import load_dotenv
+<<<<<<< HEAD
+from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes,  MessageHandler, filters
+from telegram import Update, Dice
+from telegram.constants import ParseMode
+=======
 from telegram.ext import Updater, CommandHandler, MessageHandler, filters, CallbackContext
 from telegram import ParseMode, Dice
+>>>>>>> 0404b0ed13d60ed421a29795e21f7176d41bfef5
 
 load_dotenv()
 
@@ -11,13 +17,12 @@ OWNER = int(environ.get("OWNER"))
 
 conn = sqlite3.connect('dice_scores.db')
 c = conn.cursor()
-c.execute("CREATE TABLE IF NOT EXISTS scores (chat_id BIGINT,user_id BIGINT, score INT)")
+c.execute("CREATE TABLE IF NOT EXISTS scores (chat_id BIGINT,user_id BIGINT, score INT, silent INT, clean INT)")
+conn.close()
 
-
-def start(update, context):
-    user = update.effective_user
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     list_dice = "".join(map(lambda x: str(x), Dice.ALL_EMOJI))
-    update.message.reply_text(f"""Hello {user.first_name}! I'm here to record every epic {list_dice} thrown around in your chats and set the stage for an intense battle among your members vying for the crown in /top. If you have strategic ideas for this bot, reach out to my ally, @dopmherebot. Want me to join your group? [Click here](http://telegram.me/thedartbot?startgroup=botstart) and let the competition unfold!""",parse_mode=ParseMode.MARKDOWN)
+    await update.message.reply_text(f"""Hello {update.effective_user.first_name}! I'm here to record every epic {list_dice} thrown around in your chats and set the stage for an intense battle among your members vying for the crown in /top. If you have strategic ideas for this bot, reach out to my ally, @dopmherebot. Want me to join your group? [Click here](http://telegram.me/thedartbot?startgroup=botstart) and let the competition unfold!""",parse_mode=ParseMode.MARKDOWN)
 
 
 def get_random(score, total):
@@ -46,12 +51,11 @@ def get_random(score, total):
     f"Missed it by a hair! You scored {score} points, bringing your overall total to {total}.",
     f"Solid attempt! You just notched up {score} points, making your new total {total}.",
     f"So close! With a score of {score}, your total now stands at {total}.",
-    f"Keep it up! The last move earned you {score} points, and your grand total is {total}." 
+    f"Keep it up! The last move earned you {score} points, and your grand total is {total}."
     ]
     return random.choice(outside)
 
-
-def roll(update, context):
+async def roll(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user_id = update.message.from_user.id
     chat_id = update.message.chat_id
     score = update.message.dice.value
@@ -63,19 +67,22 @@ def roll(update, context):
         if notnew:
             c.execute("UPDATE scores SET score = score + ? WHERE user_id = ? AND chat_id = ?", (score, user_id, chat_id));
             conn.commit()
-
         else:
-            c.execute("INSERT INTO scores VALUES (?, ?, ?)", (chat_id, user_id, score))
+            c.execute("INSERT INTO scores (chat_id, user_id, score) VALUES (?, ?, ?)", (chat_id, user_id, score))
             conn.commit()
         c.execute("SELECT score FROM scores WHERE user_id = ? AND chat_id = ?", (user_id, chat_id));
         total = c.fetchone()[0]
+        c.execute("SELECT silent, clean FROM scores WHERE chat_id=?", (chat_id,))
+        silent = c.fetchone()[0]
         conn.close()
-        update.message.reply_text(get_random(score, total))
+        if silent:
+            await update.message.set_reaction(reaction='🍾')
+        else:
+            await update.message.reply_text(get_random(score, total))
     else:
-      update.message.reply_text("No point of playing alone. Please consider adding me in your groups!")
+      await update.message.reply_text("No point of playing alone. Please consider adding me in your groups!")
 
-
-def leaderboard(update, context):
+async def leaderboard(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if update.message.chat.type != "private":
        conn = sqlite3.connect('dice_scores.db')
        c = conn.cursor()
@@ -84,20 +91,24 @@ def leaderboard(update, context):
        if results:
           leaderboard_text = " Leaderboard (top 10) \n"
           for user_id, max_score in results:
-              user = context.bot.get_chat_member(update.message.chat_id, user_id).user
+              user = (await context.bot.get_chat_member(update.message.chat_id, user_id)).user
               leaderboard_text += f"{user.full_name}: {max_score}\n"
 
-          update.message.reply_text(leaderboard_text)
+          await update.message.reply_text(leaderboard_text)
           conn.close()
        else:
-          update.message.reply_text("There's no leaderboard to showcase. start playing and prove your competitive prowess!")
+         await update.message.reply_text("There's no leaderboard to showcase. start playing and prove your competitive prowess!")
     else:
-       update.message.reply_text("Oh, absolutely, playing alone will surely land you at the top of the 'Solo Party for One' leaderboard.")
+       await update.message.reply_text("Oh, absolutely, playing alone will surely land you at the top of the 'Solo Party for One' leaderboard.")
 
+<<<<<<< HEAD
+async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+=======
 def unknown(update, context):
      update.message.send_message(update.effective_chat.id, "Sorry, I didn't understand that command.")
 
 def stats(update, context):
+>>>>>>> 0404b0ed13d60ed421a29795e21f7176d41bfef5
     if update.message.from_user.id == OWNER:
        conn = sqlite3.connect('dice_scores.db')
        c = conn.cursor()
@@ -107,6 +118,51 @@ def stats(update, context):
        total_chat = c.fetchone()
        c.execute("SELECT COUNT(score) FROM scores")
        total_score = c.fetchone()
+<<<<<<< HEAD
+       await update.message.reply_text(f"total unique users {total_user[0]} \ntotal unique chats {total_chat[0]} \ntotal score {total_score[0]}")
+       conn.close()
+    else:
+       return None
+
+
+async def silent(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    user_id = update.message.from_user.id
+    chat_id = update.message.chat_id
+    if update.message.chat.type != "private" and any(admin.user.id == user_id for admin in (await context.bot.get_chat_administrators(chat_id))):
+            conn = sqlite3.connect('dice_scores.db')
+            c = conn.cursor()
+            try:
+                if str(context.args[0]).lower() == "no":
+                    c.execute("UPDATE scores SET silent = 0 WHERE chat_id = ?", (chat_id,));
+                    await update.message.reply_text(f"silent mode de-activated! I will send messages related to score updates from now on.")
+                    conn.commit()
+                    conn.close()
+                elif str(context.args[0]).lower() == "yes":
+                    c.execute("UPDATE scores SET silent = 1 WHERE chat_id = ?", (chat_id,));
+                    await update.message.reply_text(f"silent mode activated! I will send reactions related to score updates instead of message.")
+                    conn.commit()
+                    conn.close()
+                else:
+                    await update.message.reply_text("""The /silent command allows you to control whether you receive notifications related to scores. When enabled, the command will suppress all score-related messages. \nUsage:
+                        /silent [option]\nValid Options:
+                        yes: Enable silent mode. This will prevent any score-related notifications from being sent to you.
+                        no: Disable silent mode. You will start receiving score-related notifications again.""")
+            except IndexError:
+                await update.message.reply_text("""The /silent command allows you to control whether you receive notifications related to scores. When enabled, the command will suppress all score-related messages. \nUsage:
+                        /silent [option]\nValid Options:
+                        yes: Enable silent mode. This will prevent any score-related notifications from being sent to you.
+                        no: Disable silent mode. You will start receiving score-related notifications again.""")
+
+
+
+app = ApplicationBuilder().token(TOKEN).build()
+app.add_handler(CommandHandler("silent",silent))
+app.add_handler(CommandHandler("start", start))
+app.add_handler(MessageHandler(filters.Dice.ALL, roll))
+app.add_handler(CommandHandler("top", leaderboard))
+app.add_handler(CommandHandler("stats", stats))
+app.run_polling()
+=======
        update.message.reply_text(f"total_user is {total_user[0]} \ntotal chat is {total_chat[0]} \ntotal score is {total_score[0]}")
        conn.close()
     else:
@@ -138,3 +194,4 @@ dispatcher.add_handler(CommandHandler('stats', stats, run_async=True))
 updater.start_polling()
 updater.idle()
 
+>>>>>>> 0404b0ed13d60ed421a29795e21f7176d41bfef5
