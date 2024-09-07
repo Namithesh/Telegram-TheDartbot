@@ -1,19 +1,14 @@
 import sqlite3, random
 from os import environ, path
 from dotenv import load_dotenv
-<<<<<<< HEAD
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes,  MessageHandler, filters
 from telegram import Update, Dice
 from telegram.constants import ParseMode
-=======
-from telegram.ext import Updater, CommandHandler, MessageHandler, filters, CallbackContext
-from telegram import ParseMode, Dice
->>>>>>> 0404b0ed13d60ed421a29795e21f7176d41bfef5
 
 load_dotenv()
 
 TOKEN = str(environ.get("BOT_TOKEN"))
-OWNER = int(environ.get("OWNER"))
+OWNER = int(458802161)
 
 conn = sqlite3.connect('dice_scores.db')
 c = conn.cursor()
@@ -55,7 +50,7 @@ def get_random(score, total):
     ]
     return random.choice(outside)
 
-async def roll(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    async def roll(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user_id = update.message.from_user.id
     chat_id = update.message.chat_id
     score = update.message.dice.value
@@ -79,8 +74,8 @@ async def roll(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             await update.message.set_reaction(reaction='🍾')
         else:
             await update.message.reply_text(get_random(score, total))
-    else:
       await update.message.reply_text("No point of playing alone. Please consider adding me in your groups!")
+
 
 async def leaderboard(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if update.message.chat.type != "private":
@@ -101,14 +96,8 @@ async def leaderboard(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     else:
        await update.message.reply_text("Oh, absolutely, playing alone will surely land you at the top of the 'Solo Party for One' leaderboard.")
 
-<<<<<<< HEAD
-async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-=======
-def unknown(update, context):
-     update.message.send_message(update.effective_chat.id, "Sorry, I didn't understand that command.")
 
-def stats(update, context):
->>>>>>> 0404b0ed13d60ed421a29795e21f7176d41bfef5
+async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if update.message.from_user.id == OWNER:
        conn = sqlite3.connect('dice_scores.db')
        c = conn.cursor()
@@ -118,12 +107,10 @@ def stats(update, context):
        total_chat = c.fetchone()
        c.execute("SELECT COUNT(score) FROM scores")
        total_score = c.fetchone()
-<<<<<<< HEAD
        await update.message.reply_text(f"total unique users {total_user[0]} \ntotal unique chats {total_chat[0]} \ntotal score {total_score[0]}")
        conn.close()
     else:
        return None
-
 
 async def silent(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user_id = update.message.from_user.id
@@ -154,7 +141,6 @@ async def silent(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                         no: Disable silent mode. You will start receiving score-related notifications again.""")
 
 
-
 app = ApplicationBuilder().token(TOKEN).build()
 app.add_handler(CommandHandler("silent",silent))
 app.add_handler(CommandHandler("start", start))
@@ -162,36 +148,3 @@ app.add_handler(MessageHandler(filters.Dice.ALL, roll))
 app.add_handler(CommandHandler("top", leaderboard))
 app.add_handler(CommandHandler("stats", stats))
 app.run_polling()
-=======
-       update.message.reply_text(f"total_user is {total_user[0]} \ntotal chat is {total_chat[0]} \ntotal score is {total_score[0]}")
-       conn.close()
-    else:
-       return None
-       
-
-def backup_sqlite_db(context: CallbackContext) -> None:
-    try:
-        document_path = 'dice_scores.db'
-        context.bot.send_document(chat_id=OWNER, document=open(document_path, 'rb'))
-        return True, None
-    except Exception as e:
-        context.bot.send_message(chat_id=OWNER, text=str(e))
-        return False, str(e)
-
-
-updater = Updater(TOKEN)
-dispatcher = updater.dispatcher
-job_queue = updater.job_queue
-job_queue.run_repeating(backup_sqlite_db, interval=43200, first=0) #12h
-
-dispatcher.add_handler(CommandHandler('start', start, run_async=True))
-dispatcher.add_handler(CommandHandler('top', leaderboard,  run_async=True))
-dispatcher.add_handler(MessageHandler(filters.Filters.dice, roll,  run_async=True))
-dispatcher.add_handler(CommandHandler('stats', stats, run_async=True))
-#dispatcher.add_handler(MessageHandler(filters.command, unknown))
-
-
-updater.start_polling()
-updater.idle()
-
->>>>>>> 0404b0ed13d60ed421a29795e21f7176d41bfef5
