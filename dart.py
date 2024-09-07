@@ -8,7 +8,7 @@ from telegram.constants import ParseMode
 load_dotenv()
 
 TOKEN = str(environ.get("BOT_TOKEN"))
-OWNER = int(458802161)
+OWNER = int(environ.get("OWNER"))
 
 conn = sqlite3.connect('dice_scores.db')
 c = conn.cursor()
@@ -50,7 +50,7 @@ def get_random(score, total):
     ]
     return random.choice(outside)
 
-    async def roll(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def roll(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user_id = update.message.from_user.id
     chat_id = update.message.chat_id
     score = update.message.dice.value
@@ -74,6 +74,7 @@ def get_random(score, total):
             await update.message.set_reaction(reaction='🍾')
         else:
             await update.message.reply_text(get_random(score, total))
+    else: 
       await update.message.reply_text("No point of playing alone. Please consider adding me in your groups!")
 
 
